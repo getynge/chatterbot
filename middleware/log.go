@@ -1,3 +1,6 @@
+/*
+Package middleware implements middleware for use with routing.Router
+*/
 package middleware
 
 import (
@@ -7,6 +10,8 @@ import (
 	"time"
 )
 
+// Logging is a middleware that logs commands and how long they take to be run.
+// Logging uses the global logger provided by zap.L(), and thus will not log to console until the global logger is configured.
 func Logging(e routing.EventHandler) routing.EventHandler {
 	return routing.EventHandlerFunc(func(discord *discordgo.Session, event *discordgo.MessageCreate, command *routing.Command) {
 		t1 := time.Now()

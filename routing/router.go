@@ -1,3 +1,38 @@
+/*
+Package routing implements a simple router for discord commands
+
+This package provides two interfaces relevant to the user: EventHandler and Middleware.
+
+Middleware is used to apply logic that is common to all routes within a Router.
+A prime example of useful Middleware is the Logging middleware found in the middleware package, with the following source:
+ func Logging(e routing.EventHandler) routing.EventHandler {
+ 	 return routing.EventHandlerFunc(func(discord *discordgo.Session, event *discordgo.MessageCreate, command *routing.Command) {
+		 t1 := time.Now()
+		 defer func() {
+			 zap.L().Info("handled command",
+				 zap.String("command", command.Command),
+				 zap.Duration("time elapsed", time.Since(t1)))
+		 }()
+
+		 e.Handler(discord, event, command)
+	 })
+ }
+Middleware is not applied to every Router in a tree of Routers, only to the router on which Router.Use is called.
+
+All Routers are EventHandlers as well as all routes within those Routers.
+Routers can be nested within one another using the AddSubcommand function, which is useful for creating commands
+such as "permission grant <user> <permission>."
+It is generally good practice to break commands up into categories to make them more ergonomic for both users and
+developers.
+Prefer
+ r := routing.NewRouter("$")
+ r.AddSubcommand("token", func(r *routing.Router)){
+	 r.AddCommandFunc("give", giveToken)
+ }
+over
+ r := routing.NewRouter("$")
+ r.AddCommandFunc("give-token", giveToken)
+*/
 package routing
 
 import (
@@ -21,6 +56,8 @@ type Router struct {
 	IgnoreBots bool
 }
 
+// NewRouter creates a new router with default values and the specified prefixes.
+// A new router created this way will have a timeout of one second, and will ignore all bots by default.
 func NewRouter(prefixes ...string) *Router {
 	return &Router{
 		prefixes:   prefixes,
@@ -37,7 +74,7 @@ func (r *Router) HandlerBootstrap(discord *discordgo.Session, event *discordgo.M
 	r.Handler(discord, event, command)
 }
 
-// Never call this function directly.
+// Handler should never be called directly
 // All routes have leading and trailing whitespace removed, along with the prefix.
 // Assuming the prefix is "$", then all of the following are the same:
 //  "$ Hi"
@@ -94,14 +131,14 @@ func (r *Router) AddCommandFunc(command string, handler func(*discordgo.Session,
 	r.routes[command] = EventHandlerFunc(handler)
 }
 
-// Adds a subcommand to the routes, where in "$x y z" y is a subcommand.
+// AddSubcommand adds another Router to the routes, where in "$x y z" y is a subcommand handled by the new router.
 func (r *Router) AddSubcommand(command string, f func(r *Router)) {
 	s := NewRouter("")
 	r.routes[command] = s
 	f(s)
 }
 
-// Adds a middleware function to the chain.
+// Use adds a middleware function to the chain.
 // Middleware is called in the order that it is defined.
 func (r *Router) Use(m Middleware) {
 	r.middleware = append(r.middleware, m)

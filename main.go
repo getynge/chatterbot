@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/getynge/chatterbot/commands"
+	"github.com/getynge/chatterbot/database"
 	"github.com/getynge/chatterbot/middleware"
 	"github.com/getynge/chatterbot/routing"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
@@ -18,6 +18,10 @@ func SetupRoutes(prefix string) *routing.Router {
 	r.Use(middleware.Logging)
 
 	r.AddCommandFunc("echo", commands.Echo)
+	r.AddSubcommand("permission", func(r *routing.Router) {
+		r.AddCommandFunc("grant", commands.GrantPermissions)
+		r.AddCommandFunc("revoke", commands.RevokePermissions)
+	})
 
 	return r
 }
@@ -32,13 +36,17 @@ func main() {
 	undo := zap.ReplaceGlobals(logger)
 	defer undo()
 
-	// Configuring environment variables
-	viper.SetEnvPrefix("CB")
-	_ = viper.BindEnv("AuthenticationToken", "AUTHENTICATION_TOKEN")
-	_ = viper.BindEnv("Prefix", "PREFIX")
+	authToken := os.Getenv("CB_AUTHENTICATION_TOKEN")
+	prefix := os.Getenv("CB_PREFIX")
+	databasePath := os.Getenv("CB_DATABASE_PATH")
 
-	authToken := viper.GetString("AuthenticationToken")
-	prefix := viper.GetString("Prefix")
+	err = database.Setup(databasePath)
+
+	if err != nil {
+		zap.L().Panic("Could not setup database", zap.Error(err))
+	}
+
+	defer database.Close()
 
 	// Actual application logic starts here
 	discord, err := discordgo.New("Bot " + authToken)
