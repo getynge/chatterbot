@@ -7,7 +7,9 @@ import (
 )
 
 type Command struct {
-	Command   string
+	// The trimmed command issued by the user (e.g. "grant")
+	Command string
+	// The text of the message with the command removed
 	Arguments string
 	Ctx       context.Context
 	Cancel    context.CancelFunc
@@ -24,7 +26,7 @@ func NewCommand(timeout time.Duration) *Command {
 // EventHandler is any type that can receive discordgo events
 // The event handler is typically going to be either a router or a wrapper created by EventHandlerFunc
 type EventHandler interface {
-	// An event handler, see the discordgo documentation for details on how event handling works
+	// Handler is an event handler, see the discordgo documentation for details on how event handling works
 	// This entry being the most relevant: https://godoc.org/github.com/bwmarrin/discordgo#Session.AddHandler
 	Handler(*discordgo.Session, *discordgo.MessageCreate, *Command)
 }

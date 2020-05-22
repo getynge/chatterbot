@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/getynge/chatterbot/commands"
-	"github.com/getynge/chatterbot/database"
 	"github.com/getynge/chatterbot/middleware"
 	"github.com/getynge/chatterbot/routing"
 	"go.uber.org/zap"
@@ -12,16 +11,14 @@ import (
 	"syscall"
 )
 
-func SetupRoutes(prefix string) *routing.Router {
+func setupRoutes(prefix string) *routing.Router {
 	r := routing.NewRouter(prefix)
 
+	r.Use(middleware.PanicHandling)
 	r.Use(middleware.Logging)
 
 	r.AddCommandFunc("echo", commands.Echo)
-	r.AddSubcommand("permission", func(r *routing.Router) {
-		r.AddCommandFunc("grant", commands.GrantPermissions)
-		r.AddCommandFunc("revoke", commands.RevokePermissions)
-	})
+	r.AddCommandFunc("kick", commands.KickUser)
 
 	return r
 }
@@ -38,15 +35,10 @@ func main() {
 
 	authToken := os.Getenv("CB_AUTHENTICATION_TOKEN")
 	prefix := os.Getenv("CB_PREFIX")
-	databasePath := os.Getenv("CB_DATABASE_PATH")
-
-	err = database.Setup(databasePath)
 
 	if err != nil {
 		zap.L().Panic("Could not setup database", zap.Error(err))
 	}
-
-	defer database.Close()
 
 	// Actual application logic starts here
 	discord, err := discordgo.New("Bot " + authToken)
@@ -55,7 +47,7 @@ func main() {
 		zap.L().Panic("Could not authenticate with discord", zap.Error(err))
 	}
 
-	router := SetupRoutes(prefix)
+	router := setupRoutes(prefix)
 	discord.AddHandler(router.HandlerBootstrap)
 
 	if err = discord.Open(); err != nil {

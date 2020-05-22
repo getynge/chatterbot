@@ -43,7 +43,7 @@ import (
 	"time"
 )
 
-// A simple router for commands, typical of what you would find in an HTTP router.
+// Router is A simple router for commands, typical of what you would find in an HTTP router.
 type Router struct {
 	prefixes   []string
 	middleware []Middleware
@@ -67,8 +67,8 @@ func NewRouter(prefixes ...string) *Router {
 	}
 }
 
-// Never call this function directly
-// Pass this function as an argument to discordgo.AddHandler in order to bootstrap the router
+// HandlerBootstrap should never be called directly.
+// HandlerBootstrap should instead be passed as an argument to discordgo.AddHandler in order to bootstrap the router
 func (r *Router) HandlerBootstrap(discord *discordgo.Session, event *discordgo.MessageCreate) {
 	command := NewCommand(r.Timeout)
 	r.Handler(discord, event, command)
