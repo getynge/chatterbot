@@ -43,7 +43,7 @@ import (
 	"time"
 )
 
-// Router is A simple router for commands, typical of what you would find in an HTTP router.
+// Router is a simple router for commands, typical of what you would find in an HTTP router.
 type Router struct {
 	prefixes   []string
 	middleware []Middleware

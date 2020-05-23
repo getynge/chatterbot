@@ -19,6 +19,7 @@ func setupRoutes(prefix string) *routing.Router {
 
 	r.AddCommandFunc("echo", commands.Echo)
 	r.AddCommandFunc("kick", commands.KickUser)
+	r.AddCommandFunc("ban", commands.BanUser)
 
 	return r
 }
@@ -35,10 +36,6 @@ func main() {
 
 	authToken := os.Getenv("CB_AUTHENTICATION_TOKEN")
 	prefix := os.Getenv("CB_PREFIX")
-
-	if err != nil {
-		zap.L().Panic("Could not setup database", zap.Error(err))
-	}
 
 	// Actual application logic starts here
 	discord, err := discordgo.New("Bot " + authToken)
